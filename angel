@@ -1,0 +1,160 @@
+import tkinter as tk
+from tkinter import messagebox
+from PIL import Image, ImageTk
+
+class CakeShop:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("Cake Shop")
+
+        self.cakes = {
+            "Chocolate Cake": {"price": 25, "image": "chocolate_cake.png"},
+            "Vanilla Cake": {"price": 20, "image": "vanilla_cake.png"},
+            "Strawberry Cake": {"price": 30, "image": "strawberry_cake.png"},
+            "Red Velvet Cake": {"price": 35, "image": "red_velvet_cake.png"},
+            "Red Velvet Cake": {"price": 35, "image": "red_velvet_cake.png"}
+        }
+
+        self.order = []
+
+        self.label = tk.Label(master, text="Welcome to Cake Shop", font=("Helvetica", 18))
+        self.label.pack()
+
+        self.cake_images = {}
+        for cake_name, cake_data in self.cakes.items():
+            img = Image.open(cake_data["image"])
+            img = img.resize((100, 100))
+            img = ImageTk.PhotoImage(img)
+            self.cake_images[cake_name] = img
+
+        self.listbox = tk.Listbox(master, selectmode=tk.MULTIPLE, font=("Helvetica", 12), exportselection=False)
+        for cake_name, cake_data in self.cakes.items():
+            self.listbox.insert(tk.END, f"{cake_name} - ${cake_data['price']}")
+        self.listbox.pack()
+
+        self.order_button = tk.Button(master, text="Place Order", command=self.place_order)
+        self.order_button.pack()
+
+        self.receipt_button = tk.Button(master, text="Receipt", command=self.show_receipt)
+        self.receipt_button.pack()
+
+        self.pay_button = tk.Button(master, text="Pay", command=self.show_bill)
+        self.pay_button.pack()
+
+        self.delete_button = tk.Button(master, text="Delete Cake", command=self.delete_cake)
+        self.delete_button.pack()
+
+        self.add_button = tk.Button(master, text="Add Cake", command=self.add_cake)
+        self.add_button.pack()
+
+        self.add_update_button = tk.Button(master, text="Update Cake", command=self.update_cake)
+        self.add_update_button.pack()
+
+        self.bill_frame = tk.Frame(master)
+        self.bill_frame.pack_propagate(False)
+        self.bill_frame.pack()
+
+        self.bill_label = tk.Label(self.bill_frame, text="")
+        self.bill_label.pack()
+
+        self.image_frame = tk.Frame(master)
+        self.image_frame.pack()
+
+        for cake_name, cake_data in self.cakes.items():
+            cake_image = tk.Label(self.image_frame, image=self.cake_images[cake_name])
+            cake_image.image = self.cake_images[cake_name]
+            cake_image.pack(side=tk.LEFT, padx=10)
+    def add_cake(self):
+        # Create a new window for entering cake details
+        cake_window = tk.Toplevel(self.master)
+        cake_window.title("Add New Cake")
+
+        # Create label and entry fields for cake name and price
+        name_label = tk.Label(cake_window, text="Cake Name:")
+        name_label.pack()
+        name_entry = tk.Entry(cake_window)
+        name_entry.pack()
+
+        price_label = tk.Label(cake_window, text="Price:")
+        price_label.pack()
+        price_entry = tk.Entry(cake_window)
+        price_entry.pack()
+        
+        add_button = tk.Button(cake_window, text="Add", command=lambda: self.add_cake_details(cake_window, name_entry, price_entry))
+        add_button.pack()
+        
+    def add_cake_details(self, cake_window, name_entry, price_entry):
+        cake_name = name_entry.get()
+        price = price_entry.get()
+        self.cakes[cake_name] = {'price': price}
+        self.listbox.insert(tk.END, f"{cake_name} - ${price}")
+        
+        # Create and configure the new_cake_label if it doesn't exist
+        if not hasattr(self, 'new_cake_label'):
+            self.new_cake_label = tk.Label(self.master, text="")
+            self.new_cake_label.pack()
+        
+        self.new_cake_label.config(text=f"Added new cake: {cake_name}")
+        cake_window.destroy()
+        
+    def show_new_cake_label(self, message):
+        new_cake_label = tk.Label(self.master, text=message)
+        new_cake_label.pack()
+
+    def place_order(self):
+        total_price = 0
+        for cake_name, cake_data in self.cakes.items():
+            price = cake_data["price"]
+            self.order.append((cake_name, price))
+            total_price += price
+        messagebox.showinfo("Order Placed", f"Your order total is ${total_price}")
+
+    def show_receipt(self):
+        if not self.order:
+            messagebox.showinfo("Receipt", "No items in order.")
+            return
+
+        receipt = "Receipt:\n"
+        receipt += ''.join(f"{cake}: ${price}\n" for cake, price in self.order)
+        messagebox.showinfo("Receipt", receipt)
+
+    def show_bill(self):
+        if not self.order:
+            messagebox.showinfo("Bill", "No items in order.")
+            return
+
+        bill = "Bill:\n"
+        bill += "".join(f"{cake}: ${price}\n" for cake, price in self.order)
+        self.bill_label.config(text=bill)
+        self.bill_frame.pack()
+
+    def delete_cake(self):
+        selected_indices = self.listbox.curselection()
+        if not selected_indices:
+            return
+        for index in reversed(selected_indices):
+            cake_name = self.listbox.get(index).split(" - ")[0]
+            self.listbox.delete(index)
+            del self.cakes[cake_name]
+    def update_cake(self):
+        cake_window = tk.Toplevel(self.master)
+        cake_window.title("Update Cake")
+
+        name_label = tk.Label(cake_window, text="Cake Name:")
+        name_entry = tk.Entry(cake_window)
+        price_label = tk.Label(cake_window, text="Price:")
+        price_entry = tk.Entry(cake_window)
+        add_button = tk.Button(cake_window, text="Add", command=lambda name_entry=name_entry, price_entry=price_entry: self.add_cake_details(cake_window, name_entry, price_entry))
+
+        name_label.pack()
+        name_entry.pack()
+        price_label.pack()
+        price_entry.pack()
+        add_button.pack()
+def main():
+    root = tk.Tk()
+    CakeShop(root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
